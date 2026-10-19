@@ -1,3 +1,19 @@
+# CO Costume Editor — archived fork
+
+A costume editor for Champions Online, originally developed by
+[codexheroes](https://github.com/codexheroes/co-character-creator)
+and released under GPL-3.0. That account has since been deleted;
+this repository preserves the source and provides builds.
+
+- **License:** GPL-3.0 — see `LICENSE`.
+- **Game data:** the tool reads from a locally installed copy of
+  Champions Online. It ships no game assets.
+- **Affiliation:** not affiliated with Cryptic Studios or the
+  game's rights holders. Champions Online is a trademark of its
+  respective owners.
+
+Pull requests are welcome for fixes and improvements.
+
 # CO Costume Editor
 
 A costume creator for **Champions Online** that runs in your web browser. You can design a costume on your own computer, without logging into the game, and save it as a costume file the game's tailor can load.
