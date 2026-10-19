@@ -1,0 +1,112 @@
+name: Build Windows and Linux Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.2.3)'
+        required: true
+        type: string
+      publish:
+        description: 'Create GitHub Releases (uncheck for build-only)'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Windows (.exe + installer)
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build the editor and release files
+        run: python make_release.py --installer
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: dist/*
+
+      - name: Publish Windows GitHub Release
+        if: ${{ inputs.publish }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Windows ${{ inputs.version }}
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+  build-linux:
+    name: Linux (PyInstaller executable)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk tk-dev libxkbcommon-x11-0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Linux executable
+        run: |
+          pyinstaller --onefile --windowed \
+            --name co-costume-editor \
+            --hidden-import tkinter \
+            --hidden-import PIL \
+            --hidden-import PIL._tkinter_finder \
+            --add-data "viewer:viewer" \
+            app_launcher.py
+        # Untested try.
+
+      - name: Archive Linux binary
+        run: |
+          cd dist
+          tar -czf co-costume-editor-linux-x86_64.tar.gz co-costume-editor
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: dist/co-costume-editor-linux-x86_64.tar.gz
+
+      - name: Publish Linux GitHub Release
+        if: ${{ inputs.publish }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}-linux
+          name: Linux ${{ inputs.version }}
+          files: dist/co-costume-editor-linux-x86_64.tar.gz
+          generate_release_notes: true
+          fail_on_unmatched_files: true
